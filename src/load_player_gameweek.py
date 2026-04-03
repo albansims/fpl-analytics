@@ -14,6 +14,9 @@ def load_player_gameweek():
     total = len(files)
     total_rows = 0
 
+    cur.execute("SELECT id, name FROM teams")
+    team_lookup = {row[0]: row[1] for row in cur.fetchall()}
+
     for i, filename in enumerate(files):
         player_id = int(filename.replace('.json', ''))
         filepath = os.path.join(SAVE_DIR, filename)
@@ -26,7 +29,8 @@ def load_player_gameweek():
             rows.append((
                 player_id,
                 gw['round'],
-                gw['opponent_team'],
+                '2025-26',
+                team_lookup.get(gw['opponent_team'], None),
                 1 if gw['was_home'] else 0,
                 gw['value'],
                 gw['total_points'],
@@ -59,7 +63,7 @@ def load_player_gameweek():
 
         cur.executemany("""
             INSERT OR REPLACE INTO player_gameweek_stats (
-                player_id, gameweek_id, opponent_team_id, was_home, value,
+                player_id, gameweek_id, season, opponent_team, was_home, value,
                 total_points, minutes, goals_scored, assists, clean_sheets,
                 goals_conceded, own_goals, penalties_saved, penalties_missed,
                 yellow_cards, red_cards, saves, bonus, bps, starts,
@@ -72,7 +76,7 @@ def load_player_gameweek():
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?
             )
         """, rows)
 

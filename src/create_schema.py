@@ -1,10 +1,10 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join("db", "fpl.db")
+DB_PATH = os.path.join('db', 'fpl.db')
 
 def create_schema():
-    os.makedirs("db", exist_ok=True)
+    os.makedirs('db', exist_ok=True)
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
@@ -18,16 +18,16 @@ def create_schema():
         );
 
         CREATE TABLE IF NOT EXISTS teams (
-            id                      INTEGER PRIMARY KEY,
-            name                    TEXT NOT NULL,
-            short_name              TEXT NOT NULL,
-            strength                INTEGER,
-            strength_overall_home   INTEGER,
-            strength_overall_away   INTEGER,
-            strength_attack_home    INTEGER,
-            strength_attack_away    INTEGER,
-            strength_defence_home   INTEGER,
-            strength_defence_away   INTEGER
+            id                    INTEGER PRIMARY KEY,
+            name                  TEXT NOT NULL,
+            short_name            TEXT NOT NULL,
+            strength              INTEGER,
+            strength_overall_home INTEGER,
+            strength_overall_away INTEGER,
+            strength_attack_home  INTEGER,
+            strength_attack_away  INTEGER,
+            strength_defence_home INTEGER,
+            strength_defence_away INTEGER
         );
 
         CREATE TABLE IF NOT EXISTS players (
@@ -67,29 +67,35 @@ def create_schema():
         );
 
         CREATE TABLE IF NOT EXISTS gameweeks (
-            id                   INTEGER PRIMARY KEY,
-            name                 TEXT NOT NULL,
-            deadline_time        TEXT,
-            average_entry_score  INTEGER,
-            highest_score        INTEGER,
-            finished             INTEGER,
-            top_element          INTEGER REFERENCES players(id)
+            id                  INTEGER PRIMARY KEY,
+            name                TEXT NOT NULL,
+            deadline_time       TEXT,
+            average_entry_score INTEGER,
+            highest_score       INTEGER,
+            finished            INTEGER
         );
 
         CREATE TABLE IF NOT EXISTS player_gameweek_stats (
             player_id                   INTEGER NOT NULL REFERENCES players(id),
             gameweek_id                 INTEGER NOT NULL REFERENCES gameweeks(id),
+            season                      TEXT NOT NULL,
+            opponent_team               TEXT,
+            was_home                    INTEGER,
+            value                       INTEGER,
             total_points                INTEGER,
             minutes                     INTEGER,
             goals_scored                INTEGER,
             assists                     INTEGER,
             clean_sheets                INTEGER,
             goals_conceded              INTEGER,
+            own_goals                   INTEGER,
+            penalties_saved             INTEGER,
+            penalties_missed            INTEGER,
+            yellow_cards                INTEGER,
+            red_cards                   INTEGER,
             saves                       INTEGER,
             bonus                       INTEGER,
             bps                         INTEGER,
-            yellow_cards                INTEGER,
-            red_cards                   INTEGER,
             starts                      INTEGER,
             expected_goals              REAL,
             expected_assists            REAL,
@@ -102,13 +108,13 @@ def create_schema():
             selected                    INTEGER,
             transfers_in                INTEGER,
             transfers_out               INTEGER,
-            PRIMARY KEY (player_id, gameweek_id)
+            PRIMARY KEY (player_id, gameweek_id, season)
         );
     """)
 
     con.commit()
     con.close()
-    print(f"Database created at {DB_PATH}")
+    print(f'Database created at {DB_PATH}')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     create_schema()
