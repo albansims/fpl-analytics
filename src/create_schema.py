@@ -1,3 +1,16 @@
+"""
+Create the SQLite database and all five tables.
+
+Input:  None
+Output: db/fpl.db - an empty database with tables for positions, teams, players,
+        gameweeks, and player_gameweek_stats.
+
+Run this script once before any load scripts. Safe to re-run — it uses
+CREATE TABLE IF NOT EXISTS so existing tables are not overwritten.
+To apply schema changes, delete db/fpl.db and re-run this script
+followed by all load scripts.
+"""
+
 import sqlite3
 import os
 

@@ -1,3 +1,14 @@
+"""
+Load positions, teams, players, and gameweeks from the saved bootstrap JSON.
+
+Input:  data/bootstrap_raw.json - already produced by fetch_bootstrap.py
+Output: Populates the four tables in database - db/fpl.db: positions, teams, players, gameweeks
+
+Must be run after create_schema.py and after fetch_bootstrap.py.
+Safe to re-run — uses INSERT OR REPLACE so existing rows are overwritten.
+"""
+
+
 import sqlite3
 import json
 import os

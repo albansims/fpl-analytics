@@ -1,3 +1,16 @@
+"""
+Fetch gameweek-by-gameweek stats for all players from the FPL 'element-summary' endpoint.
+
+Input:  db/fpl.db — reads all player IDs from the players table
+Output: data/player_gameweek/{player_id}.json — one JSON file per player
+
+Makes one API call per player (~825 calls total). Includes a 1-second delay
+between calls to avoid rate limiting (about 30 minutes total runtime - maybe more, I didn't actually count).
+Resume-safe — skips players whose JSON file already exists on disk.
+
+Run after fetch_bootstrap.py and load_bootstrap.py.
+"""
+
 import requests
 import json
 import os

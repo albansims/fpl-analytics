@@ -1,3 +1,14 @@
+"""
+Load current season gameweek stats for all players into player_gameweek_stats.
+
+Input:  data/player_gameweek/{player_id}.json — produced by fetch_player_gameweek.py
+        db/fpl.db — reads team IDs to resolve opponent names
+Output: Populates player_gameweek_stats in db/fpl.db with season = '2025-26'
+
+Safe to re-run — uses INSERT OR REPLACE so existing rows are overwritten.
+Run after fetch_player_gameweek.py.
+"""
+
 import sqlite3
 import json
 import os

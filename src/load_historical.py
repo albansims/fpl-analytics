@@ -1,3 +1,18 @@
+"""
+Load historical gameweek stats from vaastav CSV files into player_gameweek_stats.
+
+Input:  data/historical/{season}/gws/GW{n}.csv — vaastav archive files
+        db/fpl.db — reads valid player IDs to skip players not in current season
+Output: Populates player_gameweek_stats in db/fpl.db for seasons 2022-23 to 2024-25
+
+Foreign key enforcement is disabled during load — historical fixtures include
+teams no longer in the Premier League (e.g. Leicester, Ipswich) which do
+not exist in the teams table. 
+
+Safe to re-run — uses INSERT OR REPLACE so existing rows are overwritten.
+Run after load_player_gameweek.py.
+"""
+
 import sqlite3
 import pandas as pd
 import os

@@ -1,3 +1,11 @@
+"""
+Fetch current season data from the FPL bootstrap-static endpoint.
+
+Input:  None needed. This calls the FPL API directly (no authentication required)
+Output: data/bootstrap_raw.json. THis is the raw API response which contains all players,
+        teams, positions, and gameweeks for the current season
+"""
+
 import requests 
 import json
 
