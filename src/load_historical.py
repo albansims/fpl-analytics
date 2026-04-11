@@ -2,12 +2,13 @@
 Load historical gameweek stats from vaastav CSV files into player_gameweek_stats.
 
 Input:  data/historical/{season}/gws/GW{n}.csv — vaastav archive files
+        data/historical/{season}/teams.csv — vaastav team ID to name mapping
         db/fpl.db — reads valid player IDs to skip players not in current season
 Output: Populates player_gameweek_stats in db/fpl.db for seasons 2022-23 to 2024-25
 
 Foreign key enforcement is disabled during load — historical fixtures include
 teams no longer in the Premier League (e.g. Leicester, Ipswich) which do
-not exist in the teams table. 
+not exist in the teams table.
 
 Safe to re-run — uses INSERT OR REPLACE so existing rows are overwritten.
 Run after load_player_gameweek.py.
@@ -21,43 +22,25 @@ DB_PATH = os.path.join('db', 'fpl.db')
 
 SEASONS = ['2022-23', '2023-24', '2024-25']
 
-# Vaastav team name → your teams table name
-# Only needed for opponent mapping — player matching uses element ID directly
-TEAM_NAME_MAP = {
-    'Arsenal': 'Arsenal',
-    'Aston Villa': 'Aston Villa',
-    'Bournemouth': 'Bournemouth',
-    'Brentford': 'Brentford',
-    'Brighton': 'Brighton',
-    'Burnley': 'Burnley',
-    'Chelsea': 'Chelsea',
-    'Crystal Palace': 'Crystal Palace',
-    'Everton': 'Everton',
-    'Fulham': 'Fulham',
-    'Leeds': 'Leeds',
-    'Leicester': 'Leicester',
-    'Liverpool': 'Liverpool',
-    'Man City': 'Man City',
-    'Man Utd': 'Man Utd',
-    'Newcastle': 'Newcastle',
-    "Nott'm Forest": "Nott'm Forest",
-    'Sheffield Utd': 'Sheffield Utd',
-    'Southampton': 'Southampton',
-    'Spurs': 'Spurs',
-    'West Ham': 'West Ham',
-    'Wolves': 'Wolves',
-    'Ipswich': 'Ipswich',
-    'Luton': 'Luton',
-    'Nottingham Forest': "Nott'm Forest",
-    'Tottenham': 'Spurs',
-    'Manchester City': 'Man City',
-    'Manchester Utd': 'Man Utd',
-}
+
+def build_opponent_lookup(season):
+    """
+    Build a dictionary mapping vaastav integer team codes to team names
+    for a given season. Codes are season-specific — the same integer
+    maps to different teams in different seasons.
+    """
+    teams_path = os.path.join('data', 'historical', season, 'teams.csv')
+    if not os.path.exists(teams_path):
+        print(f"Warning: no teams.csv found for {season} at {teams_path}")
+        return {}
+    teams_df = pd.read_csv(teams_path)
+    # id column = vaastav integer code, name column = team name
+    return dict(zip(teams_df['id'], teams_df['name']))
 
 
 def load_historical():
     con = sqlite3.connect(DB_PATH)
-    con.execute('PRAGMA foreign_keys = OFF')  # OFF because historical teams may not be in teams table
+    con.execute('PRAGMA foreign_keys = OFF')
     cur = con.cursor()
 
     # Get all valid player IDs from the database
@@ -66,12 +49,14 @@ def load_historical():
 
     total_rows = 0
     skipped_players = 0
-    skipped_rows = 0
 
     for season in SEASONS:
         season_rows = 0
-        gw_dir = os.path.join('data', 'historical', season, 'gws')
 
+        # Build opponent lookup for this season from teams.csv
+        opponent_lookup = build_opponent_lookup(season)
+
+        gw_dir = os.path.join('data', 'historical', season, 'gws')
         if not os.path.exists(gw_dir):
             print(f"Directory not found: {gw_dir} — skipping")
             continue
@@ -90,14 +75,14 @@ def load_historical():
             for _, row in df.iterrows():
                 player_id = int(row['element'])
 
-                # Skip players not in our players table
                 if player_id not in valid_player_ids:
                     skipped_players += 1
                     continue
 
-                opponent = TEAM_NAME_MAP.get(str(row['opponent_team']).strip(), str(row['opponent_team']).strip())
+                # Convert integer opponent code to team name using season lookup
+                opponent_code = int(row['opponent_team'])
+                opponent = opponent_lookup.get(opponent_code, str(opponent_code))
 
-                # Handle expected stats — older seasons may have nulls
                 def safe_float(val):
                     try:
                         return float(val)
@@ -160,7 +145,6 @@ def load_historical():
             """, rows)
 
             season_rows += len(rows)
-            skipped_rows += skipped_players
 
         print(f"{season} — {season_rows} rows loaded")
         total_rows += season_rows
@@ -168,7 +152,7 @@ def load_historical():
     con.commit()
     con.close()
     print(f"\nDone. {total_rows} historical rows loaded.")
-    print(f"Skipped {skipped_rows} rows where player ID not in players table.")
+    print(f"Skipped {skipped_players} rows where player ID not in players table.")
 
 
 if __name__ == '__main__':
